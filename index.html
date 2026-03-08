@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#f8a4c8" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Leche" />
+  <title>Leche</title>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #fff5f9;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #f8a4c8;
+      color: white;
+      padding: 18px 20px 14px;
+      text-align: center;
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 8px rgba(248,164,200,0.4);
+    }
+
+    nav {
+      display: flex;
+      background: white;
+      border-bottom: 1px solid #fce4ef;
+    }
+
+    nav button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #aaa;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-bottom: 3px solid transparent;
+    }
+
+    nav button.active {
+      color: #e87bb0;
+      border-bottom-color: #e87bb0;
+    }
+
+    .screen { display: none; flex: 1; flex-direction: column; }
+    .screen.visible { display: flex; }
+
+    /* ── REGISTRAR ── */
+    .register-screen {
+      padding: 24px 20px;
+      gap: 20px;
+    }
+
+    .section-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #c77;
+      margin-bottom: 10px;
+    }
+
+    .girl-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .girl-btn {
+      padding: 28px 10px;
+      border-radius: 20px;
+      border: 3px solid transparent;
+      background: white;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+      transition: all 0.2s;
+      color: #555;
+    }
+
+    .girl-btn .emoji { font-size: 2.4rem; display: block; margin-bottom: 8px; }
+
+    .girl-btn.selected-mar {
+      background: #fce4ef;
+      border-color: #f8a4c8;
+      color: #d45e90;
+      box-shadow: 0 4px 16px rgba(248,164,200,0.4);
+    }
+
+    .girl-btn.selected-lara {
+      background: #e4effe;
+      border-color: #a4c8f8;
+      color: #4a80c4;
+      box-shadow: 0 4px 16px rgba(164,200,248,0.4);
+    }
+
+    .milk-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .milk-btn {
+      padding: 18px 8px;
+      border-radius: 14px;
+      border: 2px solid #eee;
+      background: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: #555;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+      transition: all 0.2s;
+    }
+
+    .milk-btn.selected {
+      background: #fff5f9;
+      border-color: #f8a4c8;
+      color: #e87bb0;
+    }
+
+    .custom-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .custom-input {
+      flex: 1;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 2px solid #eee;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #555;
+      background: white;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .custom-input:focus { border-color: #f8a4c8; }
+    .custom-input::placeholder { color: #ccc; font-weight: 400; }
+
+    .unit-label {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #aaa;
+      white-space: nowrap;
+    }
+
+    .save-btn {
+      margin-top: auto;
+      padding: 18px;
+      border-radius: 18px;
+      border: none;
+      background: linear-gradient(135deg, #f8a4c8, #e87bb0);
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(232,123,176,0.4);
+      transition: all 0.2s;
+      letter-spacing: 0.3px;
+    }
+
+    .save-btn:active { transform: scale(0.97); }
+    .save-btn:disabled {
+      background: #ddd;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #333;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: transform 0.3s ease;
+      z-index: 100;
+      white-space: nowrap;
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── HISTORIAL ── */
+    .history-screen {
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .history-filters {
+      display: flex;
+      gap: 8px;
+      padding: 14px 16px;
+      background: white;
+      border-bottom: 1px solid #fce4ef;
+      overflow-x: auto;
+    }
+
+    .filter-btn {
+      padding: 7px 16px;
+      border-radius: 20px;
+      border: 2px solid #eee;
+      background: white;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      color: #888;
+      transition: all 0.2s;
+    }
+
+    .filter-btn.active {
+      background: #fce4ef;
+      border-color: #f8a4c8;
+      color: #e87bb0;
+    }
+
+    .history-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ccc;
+      gap: 10px;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .empty-state .big { font-size: 3rem; }
+
+    .entry-card {
+      background: white;
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+      animation: slideIn 0.2s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .entry-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .entry-avatar.mar  { background: #fce4ef; }
+    .entry-avatar.lara { background: #e4effe; }
+
+    .entry-info { flex: 1; min-width: 0; }
+
+    .entry-name {
+      font-weight: 700;
+      font-size: 1rem;
+      color: #333;
+    }
+
+    .entry-name.mar  { color: #d45e90; }
+    .entry-name.lara { color: #4a80c4; }
+
+    .entry-time {
+      font-size: 0.78rem;
+      color: #aaa;
+      margin-top: 2px;
+    }
+
+    .entry-ml {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #555;
+    }
+
+    .entry-ml span {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #aaa;
+    }
+
+    .entry-delete {
+      background: none;
+      border: none;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 8px;
+      color: #ddd;
+      transition: color 0.2s;
+    }
+
+    .entry-delete:hover { color: #f88; }
+
+    /* ── RESUMEN ── */
+    .summary-screen {
+      padding: 20px 16px;
+      gap: 16px;
+      overflow-y: auto;
+    }
+
+    .summary-card {
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
+
+    .summary-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #aaa;
+      margin-bottom: 16px;
+    }
+
+    .summary-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #f5f5f5;
+    }
+
+    .summary-row:last-child { border-bottom: none; }
+
+    .summary-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-mar  { background: #f8a4c8; }
+    .dot-lara { background: #a4c8f8; }
+
+    .summary-girl { flex: 1; font-weight: 600; color: #444; }
+
+    .summary-val {
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: #333;
+    }
+
+    .summary-sub {
+      font-size: 0.78rem;
+      color: #bbb;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<header>🍼 Leche</header>
+
+<nav>
+  <button class="active" onclick="showTab('register', this)">Registrar</button>
+  <button onclick="showTab('history', this)">Historial</button>
+  <button onclick="showTab('summary', this)">Resumen</button>
+</nav>
+
+<!-- REGISTRAR -->
+<div id="tab-register" class="screen register-screen visible">
+  <div>
+    <div class="section-label">¿Quién?</div>
+    <div class="girl-buttons">
+      <button class="girl-btn" id="btn-mar" onclick="selectGirl('Mar')">
+        <span class="emoji">🩷</span>Mar
+      </button>
+      <button class="girl-btn" id="btn-lara" onclick="selectGirl('Lara')">
+        <span class="emoji">💙</span>Lara
+      </button>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-label">¿Cuántos ml?</div>
+    <div class="milk-grid">
+      <button class="milk-btn" onclick="selectMl(30)">30 ml</button>
+      <button class="milk-btn" onclick="selectMl(60)">60 ml</button>
+      <button class="milk-btn" onclick="selectMl(90)">90 ml</button>
+      <button class="milk-btn" onclick="selectMl(120)">120 ml</button>
+      <button class="milk-btn" onclick="selectMl(150)">150 ml</button>
+      <button class="milk-btn" onclick="selectMl(180)">180 ml</button>
+      <button class="milk-btn" onclick="selectMl(210)">210 ml</button>
+      <button class="milk-btn" onclick="selectMl(240)">240 ml</button>
+      <button class="milk-btn" onclick="selectMl(null)">Otro</button>
+    </div>
+    <div class="custom-row" id="custom-row" style="margin-top:10px; display:none;">
+      <input class="custom-input" id="custom-input" type="number" min="1" max="999"
+             placeholder="Cantidad" inputmode="numeric"
+             oninput="onCustomInput()" />
+      <span class="unit-label">ml</span>
+    </div>
+  </div>
+
+  <button class="save-btn" id="save-btn" disabled onclick="saveEntry()">
+    Guardar toma
+  </button>
+</div>
+
+<!-- HISTORIAL -->
+<div id="tab-history" class="screen history-screen">
+  <div class="history-filters">
+    <button class="filter-btn active" onclick="setFilter('all', this)">Todas</button>
+    <button class="filter-btn" onclick="setFilter('Mar', this)">🩷 Mar</button>
+    <button class="filter-btn" onclick="setFilter('Lara', this)">💙 Lara</button>
+    <button class="filter-btn" onclick="setFilter('today', this)">Hoy</button>
+  </div>
+  <div class="history-list" id="history-list"></div>
+</div>
+
+<!-- RESUMEN -->
+<div id="tab-summary" class="screen summary-screen">
+  <div class="summary-card" id="summary-today"></div>
+  <div class="summary-card" id="summary-week"></div>
+  <div class="summary-card" id="summary-total"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+  // ── FIREBASE ──
+  firebase.initializeApp({
+    apiKey: "AIzaSyBvEtM6qjn4-1NsMyi8lnPx1QNh_iqBkcw",
+    authDomain: "leche-d388e.firebaseapp.com",
+    projectId: "leche-d388e",
+    storageBucket: "leche-d388e.firebasestorage.app",
+    messagingSenderId: "1076453986211",
+    appId: "1:1076453986211:web:f3c9d6142c696fec6b1416"
+  });
+  const firestore = firebase.firestore();
+  const COLLECTION = 'tomas';
+
+  let allEntries = [];
+  let selectedGirl = null;
+  let selectedMl = null;
+  let currentFilter = 'all';
+
+  // Listener en tiempo real — actualiza la UI en todos los dispositivos al instante
+  firestore.collection(COLLECTION)
+    .orderBy('ts', 'desc')
+    .onSnapshot(snapshot => {
+      allEntries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const visible = document.querySelector('.screen.visible');
+      if (visible?.id === 'tab-history') renderHistory();
+      if (visible?.id === 'tab-summary') renderSummary();
+    });
+
+  // ── TABS ──
+  function showTab(name, btn) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('visible');
+    btn.classList.add('active');
+    if (name === 'history') renderHistory();
+    if (name === 'summary') renderSummary();
+  }
+
+  // ── REGISTRAR ──
+  function selectGirl(name) {
+    selectedGirl = name;
+    document.querySelectorAll('.girl-btn').forEach(b => b.className = 'girl-btn');
+    document.getElementById('btn-' + name.toLowerCase()).className = 'girl-btn selected-' + name.toLowerCase();
+    updateSaveBtn();
+  }
+
+  function selectMl(val) {
+    document.querySelectorAll('.milk-btn').forEach(b => b.classList.remove('selected'));
+    const btns = document.querySelectorAll('.milk-btn');
+    const customRow = document.getElementById('custom-row');
+
+    if (val === null) {
+      selectedMl = null;
+      customRow.style.display = 'flex';
+      document.getElementById('custom-input').focus();
+      btns[btns.length - 1].classList.add('selected');
+    } else {
+      selectedMl = val;
+      customRow.style.display = 'none';
+      document.getElementById('custom-input').value = '';
+      const idx = [30,60,90,120,150,180,210,240].indexOf(val);
+      if (idx !== -1) btns[idx].classList.add('selected');
+    }
+    updateSaveBtn();
+  }
+
+  function onCustomInput() {
+    const v = parseInt(document.getElementById('custom-input').value);
+    selectedMl = (v > 0) ? v : null;
+    updateSaveBtn();
+  }
+
+  function updateSaveBtn() {
+    document.getElementById('save-btn').disabled = !(selectedGirl && selectedMl > 0);
+  }
+
+  function saveEntry() {
+    if (!selectedGirl || !selectedMl) return;
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+
+    firestore.collection(COLLECTION).add({
+      girl: selectedGirl,
+      ml: selectedMl,
+      ts: new Date().toISOString()
+    }).then(() => {
+      showToast(`✓ ${selectedMl} ml para ${selectedGirl}`);
+    });
+
+    // reset UI inmediatamente
+    selectedGirl = null;
+    selectedMl = null;
+    document.querySelectorAll('.girl-btn').forEach(b => b.className = 'girl-btn');
+    document.querySelectorAll('.milk-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('custom-row').style.display = 'none';
+    document.getElementById('custom-input').value = '';
+    updateSaveBtn();
+  }
+
+  // ── HISTORIAL ──
+  function setFilter(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('history-list');
+    let entries = allEntries;
+
+    if (currentFilter === 'Mar' || currentFilter === 'Lara') {
+      entries = entries.filter(e => e.girl === currentFilter);
+    } else if (currentFilter === 'today') {
+      const today = new Date().toDateString();
+      entries = entries.filter(e => new Date(e.ts).toDateString() === today);
+    }
+
+    if (entries.length === 0) {
+      list.innerHTML = `<div class="empty-state">
+        <span class="big">🍼</span>
+        <span>Sin registros todavía</span>
+      </div>`;
+      return;
+    }
+
+    list.innerHTML = entries.map(e => {
+      const d = new Date(e.ts);
+      const dateStr = d.toLocaleDateString('es-ES', { day:'2-digit', month:'short' });
+      const timeStr = d.toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' });
+      const g = e.girl.toLowerCase();
+      return `<div class="entry-card">
+        <div class="entry-avatar ${g}">${e.girl === 'Mar' ? '🩷' : '💙'}</div>
+        <div class="entry-info">
+          <div class="entry-name ${g}">${e.girl}</div>
+          <div class="entry-time">${dateStr} · ${timeStr}</div>
+        </div>
+        <div class="entry-ml">${e.ml}<span> ml</span></div>
+        <button class="entry-delete" onclick="deleteEntry('${e.id}')" title="Eliminar">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  function deleteEntry(id) {
+    firestore.collection(COLLECTION).doc(id).delete();
+  }
+
+  // ── RESUMEN ──
+  function renderSummary() {
+    const now = new Date();
+    const todayStr = now.toDateString();
+    const weekAgo = new Date(now - 7 * 86400000);
+
+    function stats(entries) {
+      const mar  = entries.filter(e => e.girl === 'Mar');
+      const lara = entries.filter(e => e.girl === 'Lara');
+      return {
+        mar:  { total: mar.reduce((s,e) => s+e.ml, 0),  tomas: mar.length },
+        lara: { total: lara.reduce((s,e) => s+e.ml, 0), tomas: lara.length }
+      };
+    }
+
+    const s_today = stats(allEntries.filter(e => new Date(e.ts).toDateString() === todayStr));
+    const s_week  = stats(allEntries.filter(e => new Date(e.ts) >= weekAgo));
+    const s_total = stats(allEntries);
+
+    function card(title, s) {
+      return `<div class="summary-title">${title}</div>
+        <div class="summary-row">
+          <div class="summary-dot dot-mar"></div>
+          <div class="summary-girl">Mar</div>
+          <div>
+            <div class="summary-val">${s.mar.total} ml</div>
+            <div class="summary-sub">${s.mar.tomas} toma${s.mar.tomas !== 1 ? 's' : ''}</div>
+          </div>
+        </div>
+        <div class="summary-row">
+          <div class="summary-dot dot-lara"></div>
+          <div class="summary-girl">Lara</div>
+          <div>
+            <div class="summary-val">${s.lara.total} ml</div>
+            <div class="summary-sub">${s.lara.tomas} toma${s.lara.tomas !== 1 ? 's' : ''}</div>
+          </div>
+        </div>`;
+    }
+
+    document.getElementById('summary-today').innerHTML = card('Hoy', s_today);
+    document.getElementById('summary-week').innerHTML  = card('Últimos 7 días', s_week);
+    document.getElementById('summary-total').innerHTML = card('Total histórico', s_total);
+  }
+
+  // ── TOAST ──
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+</script>
+</body>
+</html>
