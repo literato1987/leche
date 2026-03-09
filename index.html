@@ -318,7 +318,12 @@
       color: #aaa;
     }
 
-    .entry-delete {
+    .entry-actions {
+      display: flex;
+      gap: 2px;
+    }
+
+    .entry-delete, .entry-edit {
       background: none;
       border: none;
       font-size: 1.1rem;
@@ -330,6 +335,95 @@
     }
 
     .entry-delete:hover { color: #f88; }
+    .entry-edit:hover { color: #a4c8f8; }
+
+    /* ── MODAL EDITAR ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 200;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: white;
+      border-radius: 24px 24px 0 0;
+      padding: 24px 20px 36px;
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      animation: slideUp 0.25s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
+
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #333;
+      text-align: center;
+    }
+
+    .modal-datetime {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .modal-datetime label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #c77;
+    }
+
+    .modal-datetime input {
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 2px solid #eee;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #555;
+      background: white;
+      outline: none;
+      width: 100%;
+    }
+
+    .modal-datetime input:focus { border-color: #f8a4c8; }
+
+    .modal-save {
+      padding: 16px;
+      border-radius: 16px;
+      border: none;
+      background: linear-gradient(135deg, #f8a4c8, #e87bb0);
+      color: white;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(232,123,176,0.4);
+    }
+
+    .modal-cancel {
+      padding: 12px;
+      border-radius: 16px;
+      border: 2px solid #eee;
+      background: white;
+      color: #aaa;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
 
     /* ── RESUMEN ── */
     .summary-screen {
@@ -456,6 +550,53 @@
   <div class="summary-card" id="summary-today"></div>
   <div class="summary-card" id="summary-week"></div>
   <div class="summary-card" id="summary-total"></div>
+</div>
+
+<!-- MODAL EDITAR -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title">Editar toma</div>
+
+    <div>
+      <div class="section-label">¿Quién?</div>
+      <div class="girl-buttons">
+        <button class="girl-btn" id="edit-btn-mar" onclick="editSelectGirl('Mar')">
+          <span class="emoji">🩷</span>Mar
+        </button>
+        <button class="girl-btn" id="edit-btn-lara" onclick="editSelectGirl('Lara')">
+          <span class="emoji">💙</span>Lara
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">¿Cuántos ml?</div>
+      <div class="milk-grid" id="edit-milk-grid">
+        <button class="milk-btn" onclick="editSelectMl(30)">30 ml</button>
+        <button class="milk-btn" onclick="editSelectMl(60)">60 ml</button>
+        <button class="milk-btn" onclick="editSelectMl(90)">90 ml</button>
+        <button class="milk-btn" onclick="editSelectMl(120)">120 ml</button>
+        <button class="milk-btn" onclick="editSelectMl(150)">150 ml</button>
+        <button class="milk-btn" onclick="editSelectMl(180)">180 ml</button>
+        <button class="milk-btn" onclick="editSelectMl(210)">210 ml</button>
+        <button class="milk-btn" onclick="editSelectMl(240)">240 ml</button>
+        <button class="milk-btn" onclick="editSelectMl(null)">Otro</button>
+      </div>
+      <div class="custom-row" id="edit-custom-row" style="margin-top:10px; display:none;">
+        <input class="custom-input" id="edit-custom-input" type="number" min="1" max="999"
+               placeholder="Cantidad" inputmode="numeric" oninput="onEditCustomInput()" />
+        <span class="unit-label">ml</span>
+      </div>
+    </div>
+
+    <div class="modal-datetime">
+      <label>Fecha y hora</label>
+      <input type="datetime-local" id="edit-datetime" />
+    </div>
+
+    <button class="modal-save" id="edit-save-btn" onclick="saveEdit()">Guardar cambios</button>
+    <button class="modal-cancel" onclick="closeModal()">Cancelar</button>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -600,7 +741,10 @@
           <div class="entry-time">${dateStr} · ${timeStr}</div>
         </div>
         <div class="entry-ml">${e.ml}<span> ml</span></div>
-        <button class="entry-delete" onclick="deleteEntry('${e.id}')" title="Eliminar">✕</button>
+        <div class="entry-actions">
+          <button class="entry-edit" onclick="openEdit('${e.id}')" title="Editar">✎</button>
+          <button class="entry-delete" onclick="deleteEntry('${e.id}')" title="Eliminar">✕</button>
+        </div>
       </div>`;
     }).join('');
   }
@@ -651,6 +795,100 @@
     document.getElementById('summary-today').innerHTML = card('Hoy', s_today);
     document.getElementById('summary-week').innerHTML  = card('Últimos 7 días', s_week);
     document.getElementById('summary-total').innerHTML = card('Total histórico', s_total);
+  }
+
+  // ── EDITAR ──
+  let editId = null;
+  let editGirl = null;
+  let editMl = null;
+
+  function openEdit(id) {
+    const entry = allEntries.find(e => e.id === id);
+    if (!entry) return;
+
+    editId = id;
+    editGirl = entry.girl;
+    editMl = entry.ml;
+
+    // girl
+    document.querySelectorAll('#modal-overlay .girl-btn').forEach(b => b.className = 'girl-btn');
+    document.getElementById('edit-btn-' + entry.girl.toLowerCase()).className =
+      'girl-btn selected-' + entry.girl.toLowerCase();
+
+    // ml
+    const btns = document.querySelectorAll('#edit-milk-grid .milk-btn');
+    btns.forEach(b => b.classList.remove('selected'));
+    document.getElementById('edit-custom-row').style.display = 'none';
+    document.getElementById('edit-custom-input').value = '';
+    const amounts = [30,60,90,120,150,180,210,240];
+    const idx = amounts.indexOf(entry.ml);
+    if (idx !== -1) {
+      btns[idx].classList.add('selected');
+    } else {
+      btns[btns.length - 1].classList.add('selected');
+      document.getElementById('edit-custom-row').style.display = 'flex';
+      document.getElementById('edit-custom-input').value = entry.ml;
+    }
+
+    // datetime — formato requerido: YYYY-MM-DDTHH:MM
+    const d = new Date(entry.ts);
+    const pad = n => String(n).padStart(2, '0');
+    const local = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    document.getElementById('edit-datetime').value = local;
+
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+
+  function closeModal(event) {
+    if (event && event.target !== document.getElementById('modal-overlay')) return;
+    document.getElementById('modal-overlay').classList.remove('open');
+    editId = null;
+  }
+
+  function editSelectGirl(name) {
+    editGirl = name;
+    document.querySelectorAll('#modal-overlay .girl-btn').forEach(b => b.className = 'girl-btn');
+    document.getElementById('edit-btn-' + name.toLowerCase()).className =
+      'girl-btn selected-' + name.toLowerCase();
+  }
+
+  function editSelectMl(val) {
+    const btns = document.querySelectorAll('#edit-milk-grid .milk-btn');
+    btns.forEach(b => b.classList.remove('selected'));
+    const customRow = document.getElementById('edit-custom-row');
+
+    if (val === null) {
+      editMl = null;
+      customRow.style.display = 'flex';
+      document.getElementById('edit-custom-input').focus();
+      btns[btns.length - 1].classList.add('selected');
+    } else {
+      editMl = val;
+      customRow.style.display = 'none';
+      document.getElementById('edit-custom-input').value = '';
+      const idx = [30,60,90,120,150,180,210,240].indexOf(val);
+      if (idx !== -1) btns[idx].classList.add('selected');
+    }
+  }
+
+  function onEditCustomInput() {
+    const v = parseInt(document.getElementById('edit-custom-input').value);
+    editMl = (v > 0) ? v : null;
+  }
+
+  function saveEdit() {
+    if (!editId || !editGirl || !editMl) return;
+    const dtVal = document.getElementById('edit-datetime').value;
+    const ts = dtVal ? new Date(dtVal).toISOString() : allEntries.find(e => e.id === editId)?.ts;
+
+    firestore.collection(COLLECTION).doc(editId).update({
+      girl: editGirl,
+      ml: editMl,
+      ts
+    }).then(() => showToast('✓ Toma actualizada'));
+
+    document.getElementById('modal-overlay').classList.remove('open');
+    editId = null;
   }
 
   // ── TOAST ──
