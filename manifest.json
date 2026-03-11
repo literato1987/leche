@@ -2,7 +2,7 @@
   "name": "Leche",
   "short_name": "Leche",
   "description": "Control de tomas de leche de Mar y Lara",
-  "start_url": "/",
+  "start_url": "/leche/",
   "display": "standalone",
   "background_color": "#fff5f9",
   "theme_color": "#f8a4c8",
