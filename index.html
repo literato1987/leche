@@ -701,6 +701,7 @@
     document.getElementById('btn-type-toma').className = 'type-btn' + (type === 'toma' ? ' selected-toma' : '');
     document.getElementById('btn-type-caca').className = 'type-btn' + (type === 'caca' ? ' selected-caca' : '');
     document.getElementById('ml-section').style.display = type === 'toma' ? 'block' : 'none';
+    document.getElementById('save-btn').textContent = type === 'caca' ? 'Guardar caca 💩' : 'Guardar toma';
     if (type === 'caca') {
       selectedMl = null;
       document.querySelectorAll('.milk-btn').forEach(b => b.classList.remove('selected'));
@@ -749,7 +750,8 @@
   }
 
   function saveEntry() {
-    if (!selectedGirl || !selectedMl) return;
+    if (!selectedGirl) return;
+    if (selectedType === 'toma' && !selectedMl) return;
     const btn = document.getElementById('save-btn');
     btn.disabled = true;
 
@@ -774,6 +776,7 @@
     document.getElementById('btn-type-toma').className = 'type-btn selected-toma';
     document.getElementById('btn-type-caca').className = 'type-btn';
     document.getElementById('ml-section').style.display = 'block';
+    document.getElementById('save-btn').textContent = 'Guardar toma';
     updateSaveBtn();
   }
 
