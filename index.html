@@ -64,6 +64,39 @@
       gap: 20px;
     }
 
+    .type-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .type-btn {
+      padding: 16px 10px;
+      border-radius: 16px;
+      border: 2px solid #eee;
+      background: white;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: #888;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+      transition: all 0.2s;
+    }
+
+    .type-btn .emoji { font-size: 1.6rem; display: block; margin-bottom: 4px; }
+
+    .type-btn.selected-toma {
+      background: #fff5f9;
+      border-color: #f8a4c8;
+      color: #e87bb0;
+    }
+
+    .type-btn.selected-caca {
+      background: #fffbf0;
+      border-color: #f0c060;
+      color: #b07820;
+    }
+
     .section-label {
       font-size: 0.8rem;
       font-weight: 700;
@@ -497,6 +530,18 @@
 <!-- REGISTRAR -->
 <div id="tab-register" class="screen register-screen visible">
   <div>
+    <div class="section-label">¿Qué?</div>
+    <div class="type-buttons">
+      <button class="type-btn selected-toma" id="btn-type-toma" onclick="selectType('toma')">
+        <span class="emoji">🍼</span>Toma
+      </button>
+      <button class="type-btn" id="btn-type-caca" onclick="selectType('caca')">
+        <span class="emoji">💩</span>Caca
+      </button>
+    </div>
+  </div>
+
+  <div>
     <div class="section-label">¿Quién?</div>
     <div class="girl-buttons">
       <button class="girl-btn" id="btn-mar" onclick="selectGirl('Mar')">
@@ -508,7 +553,7 @@
     </div>
   </div>
 
-  <div>
+  <div id="ml-section">
     <div class="section-label">¿Cuántos ml?</div>
     <div class="milk-grid">
       <button class="milk-btn" onclick="selectMl(30)">30 ml</button>
@@ -621,6 +666,7 @@
   let allEntries = [];
   let selectedGirl = null;
   let selectedMl = null;
+  let selectedType = 'toma';
   let currentFilter = 'all';
 
   // Autenticación anónima — se firma solo, sin que el usuario haga nada
@@ -650,6 +696,20 @@
   }
 
   // ── REGISTRAR ──
+  function selectType(type) {
+    selectedType = type;
+    document.getElementById('btn-type-toma').className = 'type-btn' + (type === 'toma' ? ' selected-toma' : '');
+    document.getElementById('btn-type-caca').className = 'type-btn' + (type === 'caca' ? ' selected-caca' : '');
+    document.getElementById('ml-section').style.display = type === 'toma' ? 'block' : 'none';
+    if (type === 'caca') {
+      selectedMl = null;
+      document.querySelectorAll('.milk-btn').forEach(b => b.classList.remove('selected'));
+      document.getElementById('custom-row').style.display = 'none';
+      document.getElementById('custom-input').value = '';
+    }
+    updateSaveBtn();
+  }
+
   function selectGirl(name) {
     selectedGirl = name;
     document.querySelectorAll('.girl-btn').forEach(b => b.className = 'girl-btn');
@@ -684,7 +744,8 @@
   }
 
   function updateSaveBtn() {
-    document.getElementById('save-btn').disabled = !(selectedGirl && selectedMl > 0);
+    const ok = selectedGirl && (selectedType === 'caca' || selectedMl > 0);
+    document.getElementById('save-btn').disabled = !ok;
   }
 
   function saveEntry() {
@@ -692,21 +753,27 @@
     const btn = document.getElementById('save-btn');
     btn.disabled = true;
 
-    firestore.collection(COLLECTION).add({
-      girl: selectedGirl,
-      ml: selectedMl,
-      ts: new Date().toISOString()
-    }).then(() => {
-      showToast(`✓ ${selectedMl} ml para ${selectedGirl}`);
+    const entry = { girl: selectedGirl, type: selectedType, ts: new Date().toISOString() };
+    if (selectedType === 'toma') entry.ml = selectedMl;
+
+    firestore.collection(COLLECTION).add(entry).then(() => {
+      const msg = selectedType === 'caca'
+        ? `💩 Caca de ${selectedGirl}`
+        : `✓ ${selectedMl} ml para ${selectedGirl}`;
+      showToast(msg);
     });
 
     // reset UI inmediatamente
     selectedGirl = null;
     selectedMl = null;
+    selectedType = 'toma';
     document.querySelectorAll('.girl-btn').forEach(b => b.className = 'girl-btn');
     document.querySelectorAll('.milk-btn').forEach(b => b.classList.remove('selected'));
     document.getElementById('custom-row').style.display = 'none';
     document.getElementById('custom-input').value = '';
+    document.getElementById('btn-type-toma').className = 'type-btn selected-toma';
+    document.getElementById('btn-type-caca').className = 'type-btn';
+    document.getElementById('ml-section').style.display = 'block';
     updateSaveBtn();
   }
 
@@ -742,13 +809,14 @@
       const dateStr = d.toLocaleDateString('es-ES', { day:'2-digit', month:'short' });
       const timeStr = d.toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' });
       const g = e.girl.toLowerCase();
+      const isCaca = e.type === 'caca';
       return `<div class="entry-card">
-        <div class="entry-avatar ${g}">${e.girl === 'Mar' ? '🩷' : '💙'}</div>
+        <div class="entry-avatar ${g}">${isCaca ? '💩' : (e.girl === 'Mar' ? '🩷' : '💙')}</div>
         <div class="entry-info">
           <div class="entry-name ${g}">${e.girl}</div>
           <div class="entry-time">${dateStr} · ${timeStr}</div>
         </div>
-        <div class="entry-ml">${e.ml}<span> ml</span></div>
+        <div class="entry-ml">${isCaca ? '<span>💩</span>' : `${e.ml}<span> ml</span>`}</div>
         <div class="entry-actions">
           <button class="entry-edit" onclick="openEdit('${e.id}')" title="Editar">✎</button>
           <button class="entry-delete" onclick="deleteEntry('${e.id}')" title="Eliminar">✕</button>
@@ -768,11 +836,15 @@
     const weekAgo = new Date(now - 7 * 86400000);
 
     function stats(entries) {
-      const mar  = entries.filter(e => e.girl === 'Mar');
-      const lara = entries.filter(e => e.girl === 'Lara');
+      const tomas = entries.filter(e => e.type !== 'caca');
+      const cacas = entries.filter(e => e.type === 'caca');
+      const marT  = tomas.filter(e => e.girl === 'Mar');
+      const laraT = tomas.filter(e => e.girl === 'Lara');
+      const marC  = cacas.filter(e => e.girl === 'Mar');
+      const laraC = cacas.filter(e => e.girl === 'Lara');
       return {
-        mar:  { total: mar.reduce((s,e) => s+e.ml, 0),  tomas: mar.length },
-        lara: { total: lara.reduce((s,e) => s+e.ml, 0), tomas: lara.length }
+        mar:  { total: marT.reduce((s,e) => s+(e.ml||0), 0),  tomas: marT.length,  cacas: marC.length },
+        lara: { total: laraT.reduce((s,e) => s+(e.ml||0), 0), tomas: laraT.length, cacas: laraC.length }
       };
     }
 
@@ -787,7 +859,7 @@
           <div class="summary-girl">Mar</div>
           <div>
             <div class="summary-val">${s.mar.total} ml</div>
-            <div class="summary-sub">${s.mar.tomas} toma${s.mar.tomas !== 1 ? 's' : ''}</div>
+            <div class="summary-sub">${s.mar.tomas} toma${s.mar.tomas !== 1 ? 's' : ''} · 💩 ${s.mar.cacas}</div>
           </div>
         </div>
         <div class="summary-row">
@@ -795,7 +867,7 @@
           <div class="summary-girl">Lara</div>
           <div>
             <div class="summary-val">${s.lara.total} ml</div>
-            <div class="summary-sub">${s.lara.tomas} toma${s.lara.tomas !== 1 ? 's' : ''}</div>
+            <div class="summary-sub">${s.lara.tomas} toma${s.lara.tomas !== 1 ? 's' : ''} · 💩 ${s.lara.cacas}</div>
           </div>
         </div>`;
     }
