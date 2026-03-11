@@ -602,6 +602,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
   // ── FIREBASE ──
@@ -614,6 +615,7 @@
     appId: "1:1076453986211:web:f3c9d6142c696fec6b1416"
   });
   const firestore = firebase.firestore();
+  const auth = firebase.auth();
   const COLLECTION = 'tomas';
 
   let allEntries = [];
@@ -621,15 +623,21 @@
   let selectedMl = null;
   let currentFilter = 'all';
 
-  // Listener en tiempo real — actualiza la UI en todos los dispositivos al instante
-  firestore.collection(COLLECTION)
-    .orderBy('ts', 'desc')
-    .onSnapshot(snapshot => {
-      allEntries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const visible = document.querySelector('.screen.visible');
-      if (visible?.id === 'tab-history') renderHistory();
-      if (visible?.id === 'tab-summary') renderSummary();
-    });
+  // Autenticación anónima — se firma solo, sin que el usuario haga nada
+  auth.signInAnonymously().catch(err => console.error('Auth error:', err));
+
+  // Listener en tiempo real — solo arranca tras autenticarse
+  auth.onAuthStateChanged(user => {
+    if (!user) return;
+    firestore.collection(COLLECTION)
+      .orderBy('ts', 'desc')
+      .onSnapshot(snapshot => {
+        allEntries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const visible = document.querySelector('.screen.visible');
+        if (visible?.id === 'tab-history') renderHistory();
+        if (visible?.id === 'tab-summary') renderSummary();
+      });
+  });
 
   // ── TABS ──
   function showTab(name, btn) {
