@@ -758,12 +758,12 @@
     const entry = { girl: selectedGirl, type: selectedType, ts: new Date().toISOString() };
     if (selectedType === 'toma') entry.ml = selectedMl;
 
-    firestore.collection(COLLECTION).add(entry).then(() => {
-      const msg = selectedType === 'caca'
-        ? `💩 Caca de ${selectedGirl}`
-        : `✓ ${selectedMl} ml para ${selectedGirl}`;
-      showToast(msg);
-    });
+    // Capturar valores antes del reset
+    const toastMsg = selectedType === 'caca'
+      ? `💩 Caca de ${selectedGirl}`
+      : `✓ ${selectedMl} ml para ${selectedGirl}`;
+
+    firestore.collection(COLLECTION).add(entry).then(() => showToast(toastMsg));
 
     // reset UI inmediatamente
     selectedGirl = null;
